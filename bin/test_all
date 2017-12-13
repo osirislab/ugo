@@ -1,0 +1,18 @@
+#!/bin/bash
+
+rbp=`pwd`
+
+cd "${0%/*}"/../test/
+
+
+for D in */;
+do
+  cd $D;
+  for binary in `find ./ -type f -perm 755`;
+  do
+    ./$binary
+  done
+  cd ..
+done
+
+cd $rbp;

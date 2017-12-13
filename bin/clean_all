@@ -1,0 +1,15 @@
+#!/bin/bash
+
+rbp=`pwd`
+
+cd "${0%/*}"/../test/
+
+
+for D in */;
+do
+  cd $D;
+  rm log output
+  cd ..
+done
+
+cd $rbp;
