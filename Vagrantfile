@@ -25,6 +25,9 @@ Vagrant.configure("2") do |config|
   # NOTE: This will enable public access to the opened port
   # config.vm.network "forwarded_port", guest: 80, host: 8080
 
+  # this line is for a nuclide server, if you're running nuclide. Feel free to comment this out in your own
+  config.vm.network "forwarded_port", guest: 9000, host: 9000, host_ip: "127.0.0.1"
+
   # Create a forwarded port mapping which allows access to a specific port
   # within the machine from a port on the host machine and only allow access
   # via 127.0.0.1 to disable public access
@@ -68,4 +71,11 @@ Vagrant.configure("2") do |config|
   #   apt-get update
   #   apt-get install -y apache2
   # SHELL
+
+  # yeah you kinda need go 1.9
+  config.vm.provision "shell", inline: <<-SHELL
+    apt update
+    snap install --classic --channel 1.9/stable go
+  SHELL
+
 end
