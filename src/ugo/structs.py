@@ -5,6 +5,7 @@ from idaapi import * # mostly for constants
 from . import Store
 
 structs = Store()
+labels = Store()
 
 size_to_flag = {
     1: FF_BYTE,
@@ -117,3 +118,18 @@ REFINFO_SUBTRACT = 0x0100 # the reference value is subtracted from
 REFINFO_SIGNEDOP = 0x0200 # the operand value is sign-extended (only
                           # supported for REF_OFF8/16/32/64)
 """
+
+# ea #offset from label
+# name # label
+#
+# # labels
+# def get_from_name(name, offset):
+#     loc = labels[name] if name in labels else LocByName(name)
+#     if loc == BADADDR:
+#         raise KeyError(name)
+#     return loc + ea
+
+# def get_struct_at(ea, name):
+
+
+

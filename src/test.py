@@ -60,7 +60,7 @@ def init_func_struc(runtime_pclntab):
     err = add_struct_member(sid, "_", field_size=4)
     err = add_struct_member(sid, "pcsp", flags=(FF_0OFF | FF_DWORD), metadata=runtime_pclntab)
     err = add_struct_member(sid, "pcfile", flags=(FF_0OFF | FF_DWORD), metadata=runtime_pclntab)
-    err = add_struct_member(sid, "pcln", field_size=4)
+    err = add_struct_member(sid, "pcln", flags=(FF_0OFF | FF_DWORD), metadata=runtime_pclntab)
     err = add_struct_member(sid, "npcdata", field_size=4)
     err = add_struct_member(sid, "nfuncdata", field_size=4)
 
