@@ -17,11 +17,13 @@ def parse_pclntab():
     pclntab_size = Qword(runtime_pclntab + 0x8)
 
     for i in range(pclntab_size):
-        MakeStructEx(curr_ea, -1, "pclnentry")
+        # MakeStructEx(curr_ea, -1, "pclnentry")
+        SetType(curr_ea, "pclnentry")
 
         off_ea = curr_ea + 0x8
         func_itab_loc = runtime_pclntab + Qword(off_ea)
-        MakeStructEx(func_itab_loc, -1, "_func_itab")
+        SetType(func_itab_loc, "_func_itab")
+        # MakeStructEx(func_itab_loc, -1, "_func_itab")
 
         curr_ea += 0x10
 
@@ -43,8 +45,8 @@ def init_pclentry_struc(runtime_pclntab):
     if sid != BADADDR:
         DelStruc(sid)
     sid = add_struct(struct_name)
-    err = add_struct_member(sid, "function", flags=(FF_0OFF | FF_QWORD)) # this is how to do pointers
-    err = add_struct_member(sid, "dataOff", flags=(FF_0OFF | FF_QWORD), metadata=runtime_pclntab)
+    err = add_struct_member(sid, "function", flags=(FF_0OFF | FF_QWRD)) # this is how to do pointers
+    err = add_struct_member(sid, "dataOff", flags=(FF_0OFF | FF_QWRD), metadata=runtime_pclntab)
 
     return sid
 
@@ -54,13 +56,13 @@ def init_func_struc(runtime_pclntab):
     if sid != BADADDR:
         DelStruc(sid)
     sid = add_struct(struct_name)
-    err = add_struct_member(sid, "entry", flags=(FF_0OFF | FF_QWORD))
-    err = add_struct_member(sid, "nameOff", field_size=4, flags=(FF_0OFF | FF_DWORD), metadata=runtime_pclntab)
+    err = add_struct_member(sid, "entry", flags=(FF_0OFF | FF_QWRD))
+    err = add_struct_member(sid, "nameOff", field_size=4, flags=(FF_0OFF | FF_DWRD), metadata=runtime_pclntab)
     err = add_struct_member(sid, "argSize", field_size=4)
     err = add_struct_member(sid, "_", field_size=4)
-    err = add_struct_member(sid, "pcsp", flags=(FF_0OFF | FF_DWORD), metadata=runtime_pclntab)
-    err = add_struct_member(sid, "pcfile", flags=(FF_0OFF | FF_DWORD), metadata=runtime_pclntab)
-    err = add_struct_member(sid, "pcln", flags=(FF_0OFF | FF_DWORD), metadata=runtime_pclntab)
+    err = add_struct_member(sid, "pcsp", field_size=4, flags=(FF_0OFF | FF_DWRD), metadata=runtime_pclntab)
+    err = add_struct_member(sid, "pcfile", field_size=4, flags=(FF_0OFF | FF_DWRD), metadata=runtime_pclntab)
+    err = add_struct_member(sid, "pcln", field_size=4) # program counter to line number
     err = add_struct_member(sid, "npcdata", field_size=4)
     err = add_struct_member(sid, "nfuncdata", field_size=4)
 

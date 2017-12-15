@@ -15,20 +15,39 @@ from idaapi import *
 # output.close()
 
 
-def get_non_funcs():
-    for i in xrange(idaapi.get_nlist_size()):
-        ea   = idaapi.get_nlist_ea(i)
-        name = idaapi.get_nlist_name(i)
-        if not idaapi.get_func(ea) and Dword(ea) != 0 and Dword(ea) != 4294967295 and 'unicode' not in name:
-            yield (ea, name, Dword(ea))
+# def get_non_funcs():
+#     for i in xrange(idaapi.get_nlist_size()):
+#         ea   = idaapi.get_nlist_ea(i)
+#         name = idaapi.get_nlist_name(i)
+#         if not idaapi.get_func(ea) and Dword(ea) != 0 and Dword(ea) != 4294967295 and 'unicode' not in name:
+#             yield (ea, name, Dword(ea))
+#
+#
+# print(len(list(get_non_funcs())))
+#
+# def pp(s):
+#     print s
+#
+# map(pp, get_non_funcs())
+
+count = 0
+for ea, name in Names():
+    if get_func(ea):
+        continue
+
+    if 'unicode' in name:
+        continue
+
+    if Qword(ea) == 0 or Qword(ea) == 18446744073709551615:
+        continue
 
 
-print(len(list(get_non_funcs())))
+    print(hex(ea) + ': ' + name, Qword(ea))
+    count += 1
 
-def pp(s):
-    print s
+print('Discovered ' + str(count) + ' results')
 
-map(pp, get_non_funcs())
+
 
 
 
