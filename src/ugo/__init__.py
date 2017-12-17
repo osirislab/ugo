@@ -1,2 +1,1 @@
-
-from .store import Store
+from .plugin import PLUGIN_ENTRY

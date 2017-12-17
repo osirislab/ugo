@@ -76,6 +76,12 @@ Vagrant.configure("2") do |config|
   config.vm.provision "shell", inline: <<-SHELL
     apt update
     snap install --classic --channel 1.9/stable go
+
+    git clone https://github.com/longld/peda.git /peda
+
+
+    echo "set auto-load safe-path /" > /home/vagrant/.gdbinit
+    echo "source ~/peda/peda.py" >> /home/vagrant/.gdbinit
   SHELL
 
 end

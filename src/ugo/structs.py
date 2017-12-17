@@ -1,8 +1,8 @@
-from idc import AddStrucEx, AddStrucMember
-
+from idc import *
 from idaapi import * # mostly for constants
+from idautils import *
 
-from . import Store
+from .store import Store
 
 structs = Store()
 labels = Store()
@@ -131,5 +131,23 @@ REFINFO_SIGNEDOP = 0x0200 # the operand value is sign-extended (only
 
 # def get_struct_at(ea, name):
 
+# iterator for struct members
+def struct_members(typename):
+    sid = get_struc_id(typename) # idaapi.get_struc_id
+    moff = GetFirstMember(sid)
+    if moff == BADADDR:
+        raise StopIteration
+    while moff != BADADDR:
+        mid = GetMemberId(sid, moff)
+        name = GetMemberName(sid, moff)
+        size = GetMemberSize(sid, moff)
+        yield (mid, moff, name, size)
+        moff = GetStrucNextOff(sid, moff)
 
+def load_struct(ea, typename):
+
+    sid = GetStrucIdByName(typename)
+    struc = {}
+    for member_id, offset, name, size in struct_members(sid):
+        struc[name] = member_id
 

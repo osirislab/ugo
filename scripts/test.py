@@ -30,22 +30,27 @@ from idaapi import *
 #
 # map(pp, get_non_funcs())
 
-count = 0
-for ea, name in Names():
-    if get_func(ea):
-        continue
+from ugo.structs import struct_members
 
-    if 'unicode' in name:
-        continue
+for m in struct_members('pclnentry'):
+    print(dir(m))
 
-    if Qword(ea) == 0 or Qword(ea) == 18446744073709551615:
-        continue
-
-
-    print(hex(ea) + ': ' + name, Qword(ea))
-    count += 1
-
-print('Discovered ' + str(count) + ' results')
+# count = 0
+# for ea, name in Names():
+#     if get_func(ea):
+#         continue
+#
+#     if 'unicode' in name:
+#         continue
+#
+#     if Qword(ea) == 0 or Qword(ea) == 18446744073709551615:
+#         continue
+#
+#
+#     print(hex(ea) + ': ' + name, Qword(ea))
+#     count += 1
+#
+# print('Discovered ' + str(count) + ' results')
 
 
 
