@@ -11,7 +11,7 @@ size_to_flag = {
     1: FF_BYTE,
     2: FF_WORD,
     4: FF_DWRD,
-    8: FF_QWORD,
+    8: FF_QWRD,
     10: FF_TBYT,
     16: FF_OWRD,
     # 4: FF_FLOAT,
@@ -137,17 +137,23 @@ def struct_members(typename):
     moff = GetFirstMember(sid)
     if moff == BADADDR:
         raise StopIteration
-    while moff != BADADDR:
-        mid = GetMemberId(sid, moff)
+    mid = GetMemberId(sid, moff)
+    while mid != -1:
         name = GetMemberName(sid, moff)
         size = GetMemberSize(sid, moff)
         yield (mid, moff, name, size)
         moff = GetStrucNextOff(sid, moff)
+        mid = GetMemberId(sid, moff)
 
+
+puller = {
+    1: Byte,
+    4: Dword,
+    8: Qword,
+}
 def load_struct(ea, typename):
-
-    sid = GetStrucIdByName(typename)
     struc = {}
-    for member_id, offset, name, size in struct_members(sid):
-        struc[name] = member_id
+    for member_id, offset, name, size in struct_members(typename):
+        struc[name] = puller[size](ea + offset)
 
+    return struc

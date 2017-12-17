@@ -22,7 +22,6 @@ class Hotloader(plugin_t):
         for plugin in self.plugins:
             idaapi.require(plugin) # set your plugin to unload when run with -1
 
-
     def term(self):
         msg("term() called!\n")
 
