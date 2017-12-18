@@ -5,7 +5,7 @@ from idc import *
 
 import ugo
 
-def go_build_comma_expr_tree(args):
+def comma_expr_tree(args):
     lexpr = None
     argc = len(args)
     if argc < 2:
@@ -15,6 +15,7 @@ def go_build_comma_expr_tree(args):
     else:
         lexpr = cexpr_t(cot_comma, None)
         lexpr.exflags = EXFL_LVALUE
+
         descend = lexpr
 
         for i in range(len(args)):
@@ -37,7 +38,6 @@ def go_build_comma_expr_tree(args):
                 ncomma._set_x(old_right)
                 ncomma._set_y(fake)
                 descend = ncomma
-        lexpr = descend
 
     return lexpr
 
@@ -57,15 +57,24 @@ def param_fix(func_ea):
 
     # lol this is super jank
     func_name = GetFunctionName(func_ea).replace(".", "_")
-    go_build_comma_expr_tree()
+#    go_build_comma_expr_tree()
     new_type = "void __usercall %s(%s);" %(func_name, new_params)
     
     # lol this is super jank x2
     new_type = new_type.replace("__interface_{}", "__uint64")
     SetType(func_ea, new_type)
 
-    print "%s -> %s" %(tif, new_type)
+#    print "%s -> %s" %(tif, new_type)
+    num_ret = func_struc["npcdata"]
 
+    return list(funcdata[i] for i in range(num_ret))
+
+def funcret_fix(parent, expr, ret_values):
+    if len(ret_values) == 0:
+        return
+    lexpr = comma_expr_tree(ret_values)
+#    parent._set_x(lexpr)
+#    lexpr._set_x(expr)
 
 class func_finder(ctree_visitor_t):
     def __init__(self):
@@ -79,7 +88,8 @@ class func_finder(ctree_visitor_t):
         if expr.op == cot_call:
             func_name = GetFunctionName(expr.x.obj_ea)
             if func_name != "":
-                param_fix(expr.x.obj_ea)
+                ret_values = param_fix(expr.x.obj_ea)
+                funcret_fix(self.parent_expr(), expr, ret_values)
         return 0
 
 
