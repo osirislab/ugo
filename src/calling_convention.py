@@ -3,6 +3,22 @@ import idaapi
 import idautils
 import idc
 import ugo
+def param_fix(func_ea):
+    func_struc = ugo.types.func_itabs[func_ea]
+    num_params = func_struc["npcdata"]
+
+    tif = idaapi.tinfo_t()
+    idaapi.get_tinfo2(func_ea, tif)
+    funcdata = idaapi.func_type_data_t()
+    tif.get_func_details(funcdata)
+    new_params = ", ".join("%s %s" %(
+            idaapi.print_tinfo('', 0, 0, idaapi.PRTYPE_1LINE, funcdata[i].type, '', ''),
+            funcdata[i].name
+        ) for i in range(num_params))
+    new_type = "void __cdecl(%s);" %(new_params)
+    print "%s -> %s" %(tif, new_type)
+    print idc.ApplyType(func_ea, new_type)
+
 
 class cblock_visitor_t(idaapi.ctree_visitor_t):
     def __init__(self):
@@ -14,11 +30,11 @@ class cblock_visitor_t(idaapi.ctree_visitor_t):
 
     def visit_expr(self, expr, *args):
         if expr.op == idaapi.cot_call:
-            func_struc = ugo.structs.load_struct(expr.x.obj_ea, "_func_itab")
-#            function_name = idc.GetFunctionName(expr.x.obj_ea)
-            function_name = GetFunctionName(expr.x.obj_ea)
-            print(function_name, func_struc)
-            print("alist", list(expr.a))
+            func_name = idc.GetFunctionName(expr.x.obj_ea)
+            if func_name != "":
+                func_struc = ugo.types.func_itabs[expr.x.obj_ea]
+                num_ret_vals = func_struc["nfuncdata"]
+                param_fix(expr.x.obj_ea)
         return 0
 
 
@@ -32,7 +48,7 @@ class hexrays_callback_info(object):
             print("callback hit")
             cfunc, maturity = args
 
-            if maturity == idaapi.CMAT_FINAL:
+            if maturity == idaapi.CMAT_BUILT:
                 cbv = cblock_visitor_t()
                 cbv.apply_to(cfunc.body, None)
         
