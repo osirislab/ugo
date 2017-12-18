@@ -10,7 +10,7 @@ class Ugo(plugin_t):
     comment = ""
 
     help = "Go Decompilation Plugin"
-    wanted_name = "Ugo"
+    wanted_name = "UGo"
     wanted_hotkey = "F8"
 
     def init(self):
@@ -31,22 +31,3 @@ class Ugo(plugin_t):
 def PLUGIN_ENTRY():
     return Ugo()
 
-'''
-// Layout of in-memory per-function information prepared by linker
-// See https://golang.org/s/go12symtab.
-// Keep in sync with linker (../cmd/link/internal/ld/pcln.go:/pclntab)
-// and with package debug/gosym and with symtab.go in package runtime.
-type _func struct {
-	entry   uintptr // start pc
-	nameoff int32   // function name
-
-	args int32 // in/out args size
-	_    int32 // previously legacy frame size; kept for layout compatibility
-
-	pcsp      int32
-	pcfile    int32
-	pcln      int32
-	npcdata   int32
-	nfuncdata int32
-}
-'''

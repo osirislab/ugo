@@ -1,7 +1,7 @@
 from .structs import *
 from .store import Store
 
-pclnentries = Store()
+func_itabs = Store()
 ENTRY_LOADED = False
 
 def parse_pclntab():
@@ -20,11 +20,13 @@ def parse_pclntab():
         # MakeStructEx(curr_ea, -1, "pclnentry")
         SetType(curr_ea, "pclnentry")
 
-        off_ea = curr_ea + 0x8
-        func_itab_loc = runtime_pclntab + Qword(off_ea)
+        pclnentry = load_struct(curr_ea, 'pclnentry')
+
+        func_itab_loc = runtime_pclntab + pclnentry['dataOff']
         succ = SetType(func_itab_loc, "_func_itab")
+
         if succ:
-            pclnentries[func_itab_loc] = ENTRY_LOADED
+            func_itabs[pclnentry['function']] = load_struct(func_itab_loc, '_func_itab')
         # MakeStructEx(func_itab_loc, -1, "_func_itab")
 
         curr_ea += 0x10
