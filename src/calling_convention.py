@@ -15,9 +15,13 @@ def param_fix(func_ea):
             idaapi.print_tinfo('', 0, 0, idaapi.PRTYPE_1LINE, funcdata[i].type, '', ''),
             funcdata[i].name
         ) for i in range(num_params))
-    new_type = "void __cdecl(%s);" %(new_params)
-    print "%s -> %s" %(tif, new_type)
-    print idc.ApplyType(func_ea, new_type)
+
+    # lol this is super jank
+    func_name = idc.GetFunctionName(func_ea).replace(".", "_")
+
+    new_type = "void __cdecl %s(%s);" %(func_name, new_params)
+    #print "%s -> %s" %(tif, new_type)
+    idc.SetType(func_ea, new_type)
 
 
 class cblock_visitor_t(idaapi.ctree_visitor_t):
