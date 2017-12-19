@@ -72,7 +72,13 @@ def param_fix(func_ea):
 def funcret_fix(parent, expr, ret_values):
     if len(ret_values) == 0:
         return
-    lexpr = comma_expr_tree(ret_values)
+#    lexpr = comma_expr_tree(ret_values)
+#    print("parent", parent._get_x())
+#    print("expr", expr)
+#    parent._set_x(None)
+#    print(parent._get_m())
+#    if parent._get_y() == expr:
+#        print("match?")
 #    parent._set_x(lexpr)
 #    lexpr._set_x(expr)
 
@@ -89,7 +95,7 @@ class func_finder(ctree_visitor_t):
             func_name = GetFunctionName(expr.x.obj_ea)
             if func_name != "":
                 ret_values = param_fix(expr.x.obj_ea)
-                funcret_fix(self.parent_expr(), expr, ret_values)
+                funcret_fix(self.parent_expr(), expr.x, ret_values)
         return 0
 
 
@@ -108,6 +114,7 @@ class hexrays_callback_info(object):
 
 def go_decomp(ea=None):
     if init_hexrays_plugin():
+        ugo.types.parse_pclntab()
         GetLongPrm(INF_COMPILER).size_i = 4
         i = hexrays_callback_info()
         install_hexrays_callback(i.event_callback)
