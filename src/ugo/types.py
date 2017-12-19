@@ -4,8 +4,7 @@ from .store import Store
 func_itabs = Store()
 ENTRY_LOADED = False
 
-def parse_pclntab():
-    runtime_pclntab = LocByName("runtime.pclntab")
+def parse_pclntab(runtime_pclntab):
 
     pclntab = init_pclntab_struc(runtime_pclntab)
     pclnentry = init_pclentry_struc(runtime_pclntab)

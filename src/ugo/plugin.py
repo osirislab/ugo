@@ -23,7 +23,13 @@ class Ugo(plugin_t):
         msg("run() called with %d!\n" % arg)
         GetLongPrm(INF_COMPILER).size_i = 4 # go binaries set int size to 4
 
-        parse_pclntab()
+        runtime_pclntab = get_segm_by_name("runtime.pclntab")
+        if not runtime_pclntab:
+            runtime_pclntab = get_segm_by_name('.gopclntab')
+        if not runtime_pclntab:
+            runtime_pclntab = get_segm_by_name('__gopclntab')
+
+        parse_pclntab(runtime_pclntab.start_ea)
 
     def term(self):
         msg("term() called!\n")
