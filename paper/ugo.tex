@@ -71,19 +71,18 @@ look like the following :
 
 {\tt \small
 \begin{verbatim}
-int wrap_fact(ClientData clientData,
-              Tcl_Interp *interp,
-              int argc, char *argv[]) {
-    int result;
-    int arg0;
-    if (argc != 2) {
-        interp->result = "wrong # args";
-        return TCL_ERROR;
-    }
-    arg0 = atoi(argv[1]);
-    result = fact(arg0);
-    sprintf(interp->result,"%d",result);
-    return TCL_OK;
+type _type struct {
+  size         uintptr
+  ptrdata      uintptr // size of memory prefix holding all pointers
+  hash         uint32
+  tflag        tflag
+  align        uint8
+  fieldalign   uint8
+  kind         uint8
+  alg          *typeAlg
+  gcdata       *byte   // stores GC type data for the garbage collector
+  str          nameOff
+  ptrToThis    typeOff
 }
 \end{verbatim}
 }
