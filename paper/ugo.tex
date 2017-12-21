@@ -28,19 +28,15 @@
 \date{}
 
 %make title bold and 14 pt font (Latex default is non-bold, 16 pt)
-\title{\Large \bf Wonderful : A Terrific Application and Fascinating Paper}
+\title{\Large \bf Ugo: Decompilation of Go}
 
 %for single author (just remove % characters)
 \author{
-{\rm Your N.\ Here}\\
-Your Institution
+{\rm Leon Chou*}\\
+New York University
 \and
-{\rm Second Name}\\
-Second Institution
-% copy the following lines to add more authors
-% \and
-% {\rm Name}\\
-%Name Institution
+{\rm Kent Ma*}\\
+New York University
 } % end author
 
 \maketitle
@@ -54,130 +50,172 @@ Second Institution
 
 
 \subsection*{Abstract}
-Your Abstract Text Goes Here.  Just a few facts.
-Whet our appetites.
+Accurate recovery of higher level abstraction is the main goal of a decompiler. The Go programming language lacks reverse engineering tools, with the unique type system and calling convention of compiled Go programs foiling industry standard decompilers. In the past year, malware and capture-the-flag challenges have been written in Go as a form of obfuscation. In this paper, we describe our IDAPro Hex-rays plugin which recovers function metadata using information left by the Go compiler, correctly handles Go’s calling convention and restores type information of data items.
 
 \section{Introduction}
 
-A paragraph of text goes here.  Lots of text.  Plenty of interesting
-text. \\
+The readability of binary programs is one of the key principles to reverse engineering and dynamic analysis. A decompiler allows for analysts to abstract away lower level concepts and create output that more closely matches higher level source code. Go malware, as well as Go binaries in the current CTF meta, have become much more common in recent years. Linux.Rex.1 and gopherz from CSAW CTF are good examples of these, respectively.
 
-More fascinating text. Features\endnote{Remember to use endnotes, not footnotes!} galore, plethora of promises.\\
+Go is a popular language for binary obfuscation because of the lack of debugging and reverse engineering tooling for the language. It’s abstractions and unique mechanics hinder current binary analysis tooling.
 
-\section{This is Another Section}
+In this paper, we present a methodology of analyzing Go binaries based on the Go compiler leaving information in the binary that allows us to retrieve information about functions and their return types. We preprocess that information, and when we reach calls in the binary’s execution we do a lookup to retrieve information that allows us to assign return values to local variables.
 
-Some embedded literal typset code might
-look like the following :
+Our implementation of these decompiler extensions is a plugin on IDAPro’s Hex-Rays decompiler. Our name for this is \textit{ugo}.
 
-{\tt \small
-\begin{verbatim}
-int wrap_fact(ClientData clientData,
-              Tcl_Interp *interp,
-              int argc, char *argv[]) {
-    int result;
-    int arg0;
-    if (argc != 2) {
-        interp->result = "wrong # args";
-        return TCL_ERROR;
-    }
-    arg0 = atoi(argv[1]);
-    result = fact(arg0);
-    sprintf(interp->result,"%d",result);
-    return TCL_OK;
-}
-\end{verbatim}
-}
-
-Now we're going to cite somebody.  Watch for the cite tag.
-Here it comes~\cite{Chaum1981,Diffie1976}.  The tilde character (\~{})
-in the source means a non-breaking space.  This way, your reference will
-always be attached to the word that preceded it, instead of going to the
-next line.
-
-\section{This Section has SubSections}
-\subsection{First SubSection}
-
-Here's a typical figure reference.  The figure is centered at the
-top of the column.  It's scaled.  It's explicitly placed.  You'll
-have to tweak the numbers to get what you want.\\
-
-% you can also use the wonderful epsfig package...
-\begin{figure}[t]
-\begin{center}
-\begin{picture}(300,150)(0,200)
-\put(-15,-30){\special{psfile = fig1.ps hscale = 50 vscale = 50}}
-\end{picture}\\
-\end{center}
-\caption{Wonderful Flowchart}
-\end{figure}
-
-This text came after the figure, so we'll casually refer to Figure 1
-as we go on our merry way.
-
-\subsection{New Subsection}
-
-It can get tricky typesetting Tcl and C code in LaTeX because they share
-a lot of mystical feelings about certain magic characters.  You
-will have to do a lot of escaping to typeset curly braces and percent
-signs, for example, like this:
-``The {\tt \%module} directive
-sets the name of the initialization function.  This is optional, but is
-recommended if building a Tcl 7.5 module.
-Everything inside the {\tt \%\{, \%\}}
-block is copied directly into the output. allowing the inclusion of
-header files and additional C code." \\
-
-Sometimes you want to really call attention to a piece of text.  You
-can center it in the column like this:
-\begin{center}
-{\tt \_1008e614\_Vector\_p}
-\end{center}
-and people will really notice it.\\
-
-\noindent
-The noindent at the start of this paragraph makes it clear that it's
-a continuation of the preceding text, not a new para in its own right.
-
-
-Now this is an ingenious way to get a forced space.
-{\tt Real~$*$} and {\tt double~$*$} are equivalent.
-
-Now here is another way to call attention to a line of code, but instead
-of centering it, we noindent and bold it.\\
-
-\noindent
-{\bf \tt size\_t : fread ptr size nobj stream } \\
-
-And here we have made an indented para like a definition tag (dt)
-in HTML.  You don't need a surrounding list macro pair.
+In summary, we make the following contributions:
 \begin{itemize}
-\item[]  {\tt fread} reads from {\tt stream} into the array {\tt ptr} at
-most {\tt nobj} objects of size {\tt size}.   {\tt fread} returns
-the number of objects read.
+\item Recover function metadata for go binaries
+\item Modify generated ASTs to match calling convention
+\item Locate new functions that are type information sinks
+\item Use calling convention recovery to improve type recovery
 \end{itemize}
-This concludes the definitions tag.
 
-\subsection{How to Build Your Paper}
 
-You have to run {\tt latex} once to prepare your references for
-munging.  Then run {\tt bibtex} to build your bibliography metadata.
-Then run {\tt latex} twice to ensure all references have been resolved.
-If your source file is called {\tt usenixTemplate.tex} and your {\tt
-  bibtex} file is called {\tt usenixTemplate.bib}, here's what you do:
+\section{Related Works}
+There has been extensive work on decompilation of C binaries. This comes primarily in two forms: abstract data type recovery and control flow structuring. 
+
+Lee et al. have done work for recovering types in binary programs~\cite{tie} based on “type sinks”. This involves solving two primary problems with decompilation of abstract data structures: type recovery and variable recovery. Once these primary problems are solved, their inferred type can be propagated to subsequent untainted uses of the data. 
+
+IDAPro Hex-rays and Schwartz et al. have previously done work for recovering high-level control structures~\cite{schwartz}. These techniques primarily involve taking the control-flow graphs and recovered types from TIE and BAP and matching predefined graph schemas. 
+
+Alternatively, Yakdan et al. have a pattern independent control-flow structuring algorithm~\cite{dream}. However, the DREAM decompiler has yet to be released.\\
+The industry standard for decompilation of C binaries is the IDA Hexrays plugin~\cite{idaprobook}. There is the IDA FLIRT feature for detecting known library subroutines based on matching signatures~\cite{flirt}. This can be applied to Go binaries, as those are statically linked with the Go runtime.
+
+There hasn’t been any previous work on explicitly decompiling Go - work on C decompilation fails to recover key layers of abstraction used in Go. However, there has been some work on reverse engineering malware that exist as stripped Go binaries. This work is focused entirely on type information recovery.
+
+Tim Strazzere’s work is the first published on type recovery of Go programs. He determines the entrypoint for Go programs as the main\_main function and recovers function boundaries using signature detection based on stack allocation properties of Go functions. He also correctly labels string boundaries in the binary, which he uses to recover symbol names of stripped functions~\cite{rednaga}. In doing so, he additionally discovered a list of type information structures (rtypes) for functions (called the .gopclntab) left as a linker artifact~\cite{bsides}.
+
+Using the type information structure described by Strazzere, Sergi Martinez discovered symbols for type names inside of the rtype structure, and used Strazzere’s string boundary recovery to recover them~\cite{martinez}. He then performed type recovery with the runtime.newobject function as a type sink. As its name suggests, this function initializes an object and one of its parameters is an rtype of the to-be-initialized type. 
+
+George Zaytsev further expands on both Martinez and Strazzere’s work for type information recovery~\cite{zeronights}. He discovers a list of members of custom struct types included in the rtype structure, and writes an IDA plugin to recover struct layouts. He additionally identifies two additional linking artifacts in the binary as promising future areas of information recovery: the moduledata segment and the .typelink segment.
+
+Another data structure unique to Go is the channel. This is a typed conduit which can concurrently send and receive values. Common Go programs extensively use this data structure in switch statement structures, which decompile illegibly. However, there has been work for reverse engineering them for a CTF competition problem~\cite{inbincible}.
+
+\section{Background}
+Go is a compiled programming language created at Google that has garbage collection and structural typing~\cite{gobook}.
+
+It is possible for Go functions to return multiple values, with each value assigned to a set of variables. This is frequently used for error handling in the language, with functions frequently having one of many return values be an error value.
 {\tt \small
 \begin{verbatim}
-latex usenixTemplate
-bibtex usenixTemplate
-latex usenixTemplate
-latex usenixTemplate
+func Atoi(s string) (int, error);
+i, err := Atoi(s)    
 \end{verbatim}
 }
 
+Conformance to structural typing is statically checked at compile time. However, it implements runtime polymorphism with interfaces. Any type that implements all methods of an interface conforms to that interface. 
 
-\subsection{Last SubSection}
+One key corner case is the empty \texttt{interface\{\}} type. This can refer to any data with a concrete type, including primitives. At runtime, code using this \texttt{interface\{\}} type can convert it into more useful types with typecasts or can inspect the type information with Go’s builtin reflect package.
 
-Well, it's getting boring isn't it.  This is the last subsection
-before we wrap it up.
+Go is designed to be concurrency-friendly with built-in types to support multithreading and a keyword that instantiates a “goroutine” - go’s internal implementation of threading that prevents wholesale register swapping by the cpu, in favor of slightly higher level memory management by the runtime. Each Go function is designed to be independent of other functions, and each function is able to be treated as its own separate goroutine. 
+
+\section{Design}
+\subsection{Function Recovery}
+The Go runtime allocates a contiguous piece of memory for the stack, which is grown by reallocation/copy when filled. There is a stack overflow check called at the start of every function. If triggered, the runtime calls the function runtime\_morestack\_noctxt, which allocates a new stack of exponentially larger size for the routine and copies over it’s old stack contents. These check and allocation calls are removed from the final decompiled output, as they are implicitly called by every Go function.
+
+Multiple return of functions is implemented at the assembly level by Go’s calling convention. There are two types of arguments: input arguments and return arguments, with return arguments above input arguments on the stack. Callers put input arguments directly above the stack frame of the called function. Registers are also caller saved, and stored on the stack above the return arguments. This stack space is offset starting from the base of the frame for the function, and reused by subsequent function calls (starting again from the base of the frame). Callee functions put return arguments on the stack allocated by their parent. It is necessary to label which stack variables are input arguments and which are return arguments.
+
+\#diagram of go stackframe and return stuffs.
+
+Metadata for functions are stored in a segment of the binary called the runtime.pclntab. The runtime.pclntab section of the Go binary is a program counter-line table of all function definitions used by the runtime for error logging when the program panics. It’s header starts with the magic signature 0xFFFFFFFB, two zeros, a pc quantum, and the pointer size - which is then followed by a value that represents how many pcln table entries for functions exist. We use this number to enumerate all the functions that exist in the binary and retrieve metadata about those functions.
+
+Each entry in the pcln table is structured as a two word pair, with the first word being the address of a function and the second word being the offset from the pclntab to the function’s metadata structure.
+
+\subsection{Type Recovery}
+Every data item in Go is an \texttt{interface\{\}} type. Internally, this means that each type is actually a pair of pointers, the first resolving to an itab type and the second pointing to binary data for the struct.
+
+    The itab struct holds pointers that point to more metadata about the data item. It also contains an array of methods for the matching type, fun\[\]. The most significant one here is the \_type pointer, that points to a \_type struct. 
+
+{\tt \small
+\begin{verbatim}
+type itab struct {
+  inter     *interfacetype
+  _type     *_type
+  hash      uint32         // copy of
+  _         [4]byte
+  fun       [1]uintptr     // variable in length
+}
+\end{verbatim}
+}
+
+Every data item in Go has an associated rtype structure (also named the \_type structure) which contains more metadata about the data, primarily used by the Go runtime’s garbage collector.
+
+This rtype structure contains information about the name of the name and size of the type. This allows for recovery of custom data structures such as user-defined structs even for symbol-stripped binaries. 
+{\tt \small
+\begin{verbatim}
+type _type struct {
+  size         uintptr
+  ptrdata      uintptr 
+  hash         uint32
+  tflag        tflag
+  align        uint8
+  fieldalign   uint8
+  kind         uint8
+  alg          *typeAlg
+  gcdata       *byte 
+  str          nameOff
+  ptrToThis    typeOff
+}
+\end{verbatim}
+}
+
+Although rtype data is included by the linker for every symbol, they are scattered throughout the .rodata segment of the binary program and there is no explicit segment in the binary for tying data and rtype structures together. 
+
+Instead, the linker inserts the exact address of the rtype structure of data as an additional parameter to functions that require them. 
+
+One major type sink is the runtime.convT2E family of functions, which casts data into the \texttt{interface\{\}} type. Go’s runtime uses this family of functions when passing an item of any type to a function whose parameter is an \texttt{interface\{\}} type. 
+
+    There is a different convT2E function for each builtin type, but all functions match the following declaration:
+
+{\tt \small
+\begin{verbatim}
+func convT2E(t *_type, elem unsafe.Pointer) (e eface) { … }
+\end{verbatim}    
+}
+
+This function directly matches a data element with its associated rtype structure as arguments. Ugo uses this type recovery technique of rtypes described by Martinez \cite{martinez} but using the runtime.convT2E family of functions as an additional type information sink.
+
+\section{Implementation}
+
+The focal point of this paper is on improving the readability of decompiler-created code for Go binaries. Several problems we encountered when attempting to recover information created by the Go compiler:
+\begin{itemize}
+\item Go implements strings differently - Go treats strings as a struct containing a length field and a second pointer referencing the actual data that exists elsewhere in the binary. This makes it difficult to detect and retrieve strings properly.
+\item Offsets instead of pointers - Go internal structs use offsets instead of pointers, making it difficult to determine the values of fields without reading Go’s dense linker source.
+\end{itemize}
+
+    Ugo is implemented as a plugin for the IDAPro Hexrays decompiler, leveraging IDA’s analyses. IDA’s api allows us to search for the beginning of runtime.pclntab using a lookup or the magic address with IDA’s LocByName function or idaapi.get\-segm\-by\-name. It is then easy to define static structs for pclnentry and pclntab in IDA itself, and use the size field provided by pclntab to enumerate each individual pclnentry. IDA also allows for defining structs at locations with MakeStrucEx, but because Go defines many fields as offsets from the beginning of pclntab, we do some preprocessing beforehand to grab the \-func metadata struct out as we parse each individual pclnentry. The preprocessing generates a lookup table from function pointer to function metadata, allowing for a quick grab whenever a call is detected.
+
+    For the sake of xrefs, we also use define \-func structs using IDA’s AddStrucEx and AddStrucMemberEx functions because IDA allows us to define fields as offsets from symbols, it made navigating and reversing the binary much easier. Another minor note, Go has 4 byte sized ints, so using IDA’s api call \texttt{GetLongPrm(INF\-COMPILER).size\-i = 4 }, we can tell the decompiler to treat ints as if they were 4 bytes instead of 8, which is the default for 64 bit binaries.
+
+    IDA’s builtin calling convention labels are not applicable to Go’s calling convention. They all assume that return values are singular and are placed in a register - the API prevents otherwise~\cite{settype}. Ugo relabels the types and calling conventions of all functions in a Go binary as an IDA void \texttt{\_\_usercall<>()}. This causes IDA to build its initial abstract syntax tree with all functions having no return value and both parameters and return values as arguments.
+
+    Ugo then uses the number of parameters and return values recovered to label which stack variables are return values. It restructures the abstract syntax tree in IDA (internally called the ctree) of the program. It defines a custom comma operator for grouping variables together, and sets the lvalue of the function to these grouped variables. This allows Hexrays to display the line of code in correct Go syntax by properly implementing calling convention.
+
+    Ugo performs its type recovery while restoring function calling conventions. It checks the symbol of the function against the whitelist of known type sinks and recovers type names from all rtypes passed as arguments for the function. This type name is then used to label the associated stack variables.
+
+    The whitelist consists of the following functions:
+\begin{itemize}
+\item \texttt{runtime\-newobject}
+\item \texttt{runtime\-convT2E}
+\item \texttt{runtime\-convT2E16}
+\item \texttt{runtime\-convT2E32}
+\item \texttt{runtime\-convT2E64}
+\item \texttt{runtime\-convT2Eslice}
+\item \texttt{runtime\-convT2Enoptr}
+\end{itemize}
+
+\section{Evaluation}
+    We plan to evaluate ugo by conducting a study with OSIRIS security research lab members. The tasks for evaluation will be based on reverse engineering on real CTF challenges and will revolve around number of solves and feedback from members.
+
+    Another option for evaluation is Stanford’s MOSS (Measure of Software Similarity)~\cite{moss} test to measure parity from decompiler output against Go source code. Because of the amount of information the Go compiler leaves in the binary, it is theoretically feasible to extract direct source from go binaries. This is noted as a future option, after further development.
+
+    Although there is no explicit segment in the binary for tying data and rtype structures together, it may still be possible to recover rtype structures for data even when it is not explicitly used.
+
+There are two potential approaches for doing so: the runtime garbage collector must reference the rtype for each data entry. Therefore, it may have a scheme in the .gcdata segment of the binary for connecting a data entry with its rtype. Additionally, the linker may have a scheme for placing rtypes in the .rodata. Therefore, there may be a deterministic placement order that is undocumented but used in implementation.
+
+While ugo is performing calling convention recovery, the ctree representation of the program source can additionally be modified for other components of Go syntactic sugar. Channels, goroutines, defer, and panics are all compiled to and implemented by runtime function calls.
+
+\section{Conclusion}
+In this paper we made two contributions. We discovered additional commonly-used functions to use as type sinks for type information recovery. We additionally recovered metadata that we used for restoring calling convention of a a Go function call. This allows Hexrays decompilation to display Go source under IDAPro. Our plugin is the first of its kind to use linker artifacts and reflection metadata to decompile into Go source. We hope that our work can serve as inspiration and documentation for similar attempts to reverse engineer compiled Go.
 
 \section{Acknowledgments}
 
@@ -186,28 +224,14 @@ especially those who funded the work.
 
 \section{Availability}
 
-It's great when this section says that MyWonderfulApp is free software,
-available via anonymous FTP from
+Ugo is free software, available via Github from 
 
 \begin{center}
-{\tt ftp.site.dom/pub/myname/Wonderful}\\
+    {\tt github.com/isislab/ugo\\ }
 \end{center}
-
-Also, it's even greater when you can write that information is also
-available on the Wonderful homepage at
-
-\begin{center}
-{\tt http://www.site.dom/\~{}myname/SWIG}
-\end{center}
-
-Now we get serious and fill in those references.  Remember you will
-have to run latex twice on the document in order to resolve those
-cite tags you met earlier.  This is where they get resolved.
-We've preserved some real ones in addition to the template-speak.
-After the bibliography you are DONE.
 
 {\footnotesize \bibliographystyle{acm}
-\bibliography{../common/bibliography}}
+\bibliography{ugo}
 
 
 \theendnotes
